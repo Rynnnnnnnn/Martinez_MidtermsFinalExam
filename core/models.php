@@ -2,63 +2,56 @@
 
 require_once 'dbConfig.php';
 
-function insertNewUser($pdo, $username, $password) {
+function insertNewUser($pdo, $username, $password, $first_name, $last_name, $dob) {
 
-	$checkUserSql = "SELECT * FROM user_passwords WHERE username = ?";
-	$checkUserSqlStmt = $pdo->prepare($checkUserSql);
-	$checkUserSqlStmt->execute([$username]);
+    if (empty($username) || empty($password) || empty($first_name) || empty($last_name) || empty($dob)) {
+        $_SESSION['message'] = "All fields are required.";
+        return false;
+    }
 
-	if ($checkUserSqlStmt->rowCount() == 0) {
+    $checkUserSql = "SELECT * FROM user_passwords WHERE username = ?";
+    $checkUserSqlStmt = $pdo->prepare($checkUserSql);
+    $checkUserSqlStmt->execute([$username]);
 
-		$sql = "INSERT INTO user_passwords (username,password) VALUES(?,?)";
-		$stmt = $pdo->prepare($sql);
-		$executeQuery = $stmt->execute([$username, $password]);
+    if ($checkUserSqlStmt->rowCount() == 0) {
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-		if ($executeQuery) {
-			$_SESSION['message'] = "User successfully inserted";
-			return true;
-		}
+        $sql = "INSERT INTO user_passwords (username, password, first_name, last_name, dob) VALUES (?, ?, ?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        $executeQuery = $stmt->execute([$username, $hashedPassword, $first_name, $last_name, $dob]);
 
-		else {
-			$_SESSION['message'] = "An error occured from the query";
-		}
-
-	}
-	else {
-		$_SESSION['message'] = "User already exists";
-	}
-
-	
+        if ($executeQuery) {
+            $_SESSION['message'] = "User successfully inserted";
+            return true;
+        } else {
+            $_SESSION['message'] = "An error occurred during the query";
+        }
+    } else {
+        $_SESSION['message'] = "User already exists";
+    }
+    return false;
 }
 
-
-
 function loginUser($pdo, $username, $password) {
-	$sql = "SELECT * FROM user_passwords WHERE username=?";
-	$stmt = $pdo->prepare($sql);
-	$stmt->execute([$username]); 
+    $sql = "SELECT * FROM user_passwords WHERE username = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$username]);
 
-	if ($stmt->rowCount() == 1) {
-		$userInfoRow = $stmt->fetch();
-		$usernameFromDB = $userInfoRow['username']; 
-		$passwordFromDB = $userInfoRow['password'];
+    if ($stmt->rowCount() == 1) {
+        $userInfoRow = $stmt->fetch();
+        $hashedPasswordFromDB = $userInfoRow['password'];
 
-		if ($password == $passwordFromDB) {
-			$_SESSION['username'] = $usernameFromDB;
-			$_SESSION['message'] = "Login successful!";
-			return true;
-		}
-
-		else {
-			$_SESSION['message'] = "Password is invalid, but user exists";
-		}
-	}
-
-	
-	if ($stmt->rowCount() == 0) {
-		$_SESSION['message'] = "Username doesn't exist from the database. You may consider registration first";
-	}
-
+        if (password_verify($password, $hashedPasswordFromDB)) {
+            $_SESSION['username'] = $username;
+            $_SESSION['message'] = "Login successful!";
+            return true;
+        } else {
+            $_SESSION['message'] = "Invalid password.";
+        }
+    } else {
+        $_SESSION['message'] = "Username doesn't exist in the database. You may consider registration first.";
+    }
+    return false;
 }
 
 function getAllUsers($pdo) {
@@ -83,7 +76,7 @@ function getUserByID($pdo, $user_id) {
 
 
 function insertCustomer($pdo, $first_name, $last_name, $email, $purpose) {
-	// Fetch the current user from session for `added_by`
+
 	$added_by = $_SESSION['username'] ?? 'Unknown'; 
 
 	$sql = "INSERT INTO customer (first_name, last_name, email, purpose, added_by) VALUES (?, ?, ?, ?, ?)";
@@ -96,7 +89,7 @@ function insertCustomer($pdo, $first_name, $last_name, $email, $purpose) {
 }
 
 function updateCustomer($pdo, $first_name, $last_name, $email, $purpose, $customer_id) {
-	// Fetch the current user from session for `updated_by`
+
 	$updated_by = $_SESSION['username'] ?? 'Unknown'; 
 
 	$sql = "UPDATE customer
@@ -154,7 +147,7 @@ function getCustomerByID($pdo, $customer_id) {
     if ($executeQuery) {
         return $stmt->fetch();
     }
-    return null; // Return null if no result
+    return null;
 }
 
 
