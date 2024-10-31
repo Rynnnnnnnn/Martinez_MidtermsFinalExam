@@ -1,57 +1,53 @@
 <?php 
-session_start(); // Start the session at the top
+session_start();
 
 require_once 'dbConfig.php'; 
 require_once 'models.php';
 
 if (isset($_POST['registerUserBtn'])) {
-	$username = $_POST['username'];
-	$password = sha1($_POST['password']);
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['last_name'];
+    $dob = $_POST['dob'];
+    $username = $_POST['username'];
+    $password = $_POST['password'];
 
-	if (!empty($username) && !empty($password)) {
-		$insertQuery = insertNewUser($pdo, $username, $password);
-		if ($insertQuery) {
-			header("Location: ../login.php");
-		} else {
-			header("Location: ../register.php");
-		}
-	} else {
-		$_SESSION['message'] = "Please make sure the input fields are not empty for registration!";
-		header("Location: ../login.php");
-	}
+    if (!empty($username) && !empty($password) && !empty($first_name) && !empty($last_name) && !empty($dob)) {
+        $insertQuery = insertNewUser($pdo, $username, $password, $first_name, $last_name, $dob);
+        if ($insertQuery) {
+            header("Location: ../login.php");
+        } else {
+            header("Location: ../register.php");
+        }
+    } else {
+        $_SESSION['message'] = "Please make sure the input fields are not empty for registration!";
+        header("Location: ../login.php");
+    }
 }
 
 if (isset($_GET['logoutAUser'])) {
-	// Ensure session is started, destroy the session to log out the user
-	session_start();
-	session_unset();
-	session_destroy();
-
-	// Redirect to the login page after logout
-	header("Location: ../loginRegister.php");
-	exit();
+    session_start();
+    session_unset();
+    session_destroy();
+    header("Location: ../loginRegister.php");
+    exit();
 }
 
 if (isset($_POST['loginUserBtn'])) {
-	$username = $_POST['username'];
-	$password = sha1($_POST['password']);
-
-	if (!empty($username) && !empty($password)) {
-		$loginQuery = loginUser($pdo, $username, $password);
-		if ($loginQuery) {
-			$_SESSION['username'] = $username; // Store username in session
-			header("Location: ../index.php");
-		} else {
-			header("Location: ../login.php");
-		}
-	} else {
-		$_SESSION['message'] = "Please make sure the input fields are not empty for the login!";
-		header("Location: ../login.php");
-	}
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    if (!empty($username) && !empty($password)) {
+        $loginQuery = loginUser($pdo, $username, $password);
+        if ($loginQuery) {
+            $_SESSION['username'] = $username;
+            header("Location: ../index.php");
+        } else {
+            header("Location: ../login.php");
+        }
+    } else {
+        $_SESSION['message'] = "Please make sure the input fields are not empty for the login!";
+        header("Location: ../login.php");
+    }
 }
-
-// Rest of your form handling code for insert, edit, delete operations
-// No need to repeat the logout section here; it has already been handled above
 
 if (isset($_POST['insertCustomerBtn'])) {
 	if (!empty($_POST['firstName']) && !empty($_POST['lastName']) && !empty($_POST['email']) && !empty($_POST['purpose'])) {
