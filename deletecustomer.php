@@ -16,7 +16,7 @@ require_once 'core/dbConfig.php';
 	<?php 
 		$getCustomerByID = getCustomerByID($pdo, $_GET['customer_id']); 
 		
-		if ($getCustomerByID) { // Check if customer data exists
+		if ($getCustomerByID) {
 	?>
 		<div class="container" style="border-style: solid; height: 400px;">
 			<h2>First Name: <?php echo $getCustomerByID['first_name']; ?></h2>
